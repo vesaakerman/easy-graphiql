@@ -1,15 +1,20 @@
 {
   "name": "easy-graphiql",
-  "version": "0.1.0",
+  "version": "1.0.0-SNAPSHOT",
   "private": true,
   "dependencies": {
-    "@types/jest": "24.0.15",
-    "@types/node": "12.6.2",
-    "@types/react": "16.8.23",
-    "@types/react-dom": "16.8.4",
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
-    "react-scripts": "3.0.1",
+    "@types/graphql": "^14.2.3",
+    "@types/jest": "24.0.17",
+    "@types/node": "12.7.2",
+    "@types/react": "^16.9.2",
+    "@types/react-dom": "^16.8.5",
+    "fetch": "^1.1.0",
+    "graphiql": "^0.13.2",
+    "graphiql-explorer": "^0.4.3",
+    "graphql": "^14.4.2",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "react-scripts": "3.1.1",
     "typescript": "3.5.3"
   },
   "scripts": {
