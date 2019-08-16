@@ -16,28 +16,35 @@
 import * as React from "react"
 import { Component, createRef } from "react"
 import GraphiQL from "graphiql"
+import GraphiQLExplorer from "graphiql-explorer"
 import "graphiql/graphiql.css"
 import "./App.css"
+import { buildClientSchema, getIntrospectionQuery, GraphQLSchema } from "graphql"
 
 interface AppState {
+    schema?: GraphQLSchema
     query?: string
     variables?: string
     operationName?: string
+    explorerIsOpen: boolean
 }
 
 class App extends Component<{}, AppState> {
     constructor(props: any) {
         super(props)
         this.state = {
+            schema: null,
             query: undefined,
             variables: undefined,
             operationName: undefined,
+            explorerIsOpen: true,
         }
     }
 
     backendURL = createRef<HTMLSelectElement>()
     username = createRef<HTMLInputElement>()
     password = createRef<HTMLInputElement>()
+    _graphiql = createRef<GraphiQL>()
 
     graphQLFetcher = async (graphQLParams) => {
         const username = this.username.current.value
@@ -65,6 +72,27 @@ class App extends Component<{}, AppState> {
         }
     }
 
+    toggleExplorer = () => {
+        this.setState(state => ({ ...state, explorerIsOpen: !state.explorerIsOpen }))
+    }
+
+    setQuery = newQuery => {
+        this.setState(state => ({ ...state, query: newQuery }))
+    }
+
+    setVariable = newVariables => {
+        this.setState(state => ({ ...state, variables: newVariables }))
+    }
+
+    setNewOperationName = newOperationName => {
+        this.setState(state => ({ ...state, operationName: newOperationName }))
+    }
+
+    async componentDidMount() {
+        const result = await this.graphQLFetcher({ query: getIntrospectionQuery() })
+        this.setState(state => ({ ...state, schema: buildClientSchema(result.data) }))
+    }
+
     render() {
         return (
             <div id="graphiql">
@@ -88,23 +116,55 @@ class App extends Component<{}, AppState> {
                         </select>
                     </div>
                 </div>
-                <GraphiQL fetcher={this.graphQLFetcher}
-                          schema={undefined}
-                          query={this.state.query}
-                          variables={this.state.variables}
-                          operationName={this.state.operationName}
-                          onEditQuery={newQuery => this.setState(state => ({
-                              ...state,
-                              query: newQuery,
-                          }))}
-                          onEditVariables={newVariables => this.setState(state => ({
-                              ...state,
-                              variables: newVariables,
-                          }))}
-                          onEditOperationName={newOperationName => this.setState(state => ({
-                              ...state,
-                              operationName: newOperationName,
-                          }))}/>
+                <div className="graphiql-container">
+                    <GraphiQLExplorer
+                        schema={this.state.schema}
+                        query={this.state.query}
+                        onEdit={this.setQuery}
+                        onRunOperation={() => this._graphiql.current.handleRunQuery()}
+                        explorerIsOpen={this.state.explorerIsOpen}
+                        onToggleExplorer={this.toggleExplorer}
+                    />
+                    <GraphiQL
+                        ref={ref => (this._graphiql = ref)}
+                        fetcher={this.graphQLFetcher}
+                        schema={this.state.schema}
+                        query={this.state.query}
+                        variables={this.state.variables}
+                        operationName={this.state.operationName}
+                        onEditQuery={this.setQuery}
+                        onEditVariables={this.setVariable}
+                        onEditOperationName={this.setNewOperationName}
+                    >
+                        <GraphiQL.Toolbar>
+                            <GraphiQL.Button
+                                onClick={() => this._graphiql.current.handlePrettifyQuery()}
+                                label="Prettify"
+                                title="Prettify Query (Shift-Ctrl-P)"
+                            />
+                            <GraphiQL.Button
+                                onClick={() => this._graphiql.current.handleMergeQuery()}
+                                title="Merge Query (Shift-Ctrl-M)"
+                                label="Merge"
+                            />
+                            <GraphiQL.Button
+                                onClick={() => this._graphiql.current.handleCopyQuery()}
+                                title="Copy Query (Shift-Ctrl-C)"
+                                label="Copy"
+                            />
+                            <GraphiQL.Button
+                                onClick={() => this._graphiql.current.handleToggleHistory()}
+                                label="History"
+                                title="Show History"
+                            />
+                            <GraphiQL.Button
+                                onClick={this.toggleExplorer}
+                                label="Explorer"
+                                title="Toggle Explorer"
+                            />
+                        </GraphiQL.Toolbar>
+                    </GraphiQL>
+                </div>
             </div>
         )
     }
