@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import * as React from "react"
-import { Component, createRef } from "react"
+import { Component, createRef, SyntheticEvent } from "react"
 import GraphiQL from "graphiql"
 import GraphiQLExplorer from "graphiql-explorer"
 import "graphiql/graphiql.css"
@@ -27,6 +27,10 @@ interface AppState {
     variables?: string
     operationName?: string
     explorerIsOpen: boolean
+
+    backendURL: string
+    username: string
+    password: string
 }
 
 class App extends Component<{}, AppState> {
@@ -38,21 +42,21 @@ class App extends Component<{}, AppState> {
             variables: undefined,
             operationName: undefined,
             explorerIsOpen: true,
+            backendURL: "https://deasy.dans.knaw.nl/deposit-properties/graphql",
+            username: "",
+            password: "",
         }
     }
 
-    backendURL = createRef<HTMLSelectElement>()
-    username = createRef<HTMLInputElement>()
-    password = createRef<HTMLInputElement>()
     _graphiql = createRef<GraphiQL>()
 
     graphQLFetcher = async (graphQLParams) => {
-        const username = this.username.current.value
-        const password = this.password.current.value
+        const username = this.state.username
+        const password = this.state.password
         const encoded = window.btoa(`${username}:${password}`)
         const auth = "Basic " + encoded
 
-        const response = await fetch(this.backendURL.current.value, {
+        const response = await fetch(this.state.backendURL, {
             method: "post",
             headers: {
                 "Accept": "application/json",
@@ -88,9 +92,35 @@ class App extends Component<{}, AppState> {
         this.setState(state => ({ ...state, operationName: newOperationName }))
     }
 
-    async componentDidMount() {
+    setUsername = e => {
+        e.persist()
+        this.setState(state => ({ ...state, username: e.target.value }))
+    }
+
+    setPassword = e => {
+        e.persist()
+        this.setState(state => ({ ...state, password: e.target.value }))
+    }
+
+    setBackendURL = e => {
+        e.persist()
+        this.setState(state => ({ ...state, backendURL: e.target.value }))
+    }
+
+    async fetchSchema() {
         const result = await this.graphQLFetcher({ query: getIntrospectionQuery() })
         this.setState(state => ({ ...state, schema: buildClientSchema(result.data) }))
+    }
+
+    async componentDidMount() {
+        await this.fetchSchema()
+    }
+
+    async componentDidUpdate(prevProps: Readonly<{}>, prevState: Readonly<AppState>, snapshot?: any) {
+        if (prevState.backendURL !== this.state.backendURL) {
+            console.log("backendURL changed, fetching new schema")
+            await this.fetchSchema()
+        }
     }
 
     render() {
@@ -99,21 +129,27 @@ class App extends Component<{}, AppState> {
                 <div className="config">
                     <div>
                         <label htmlFor="username" className="title">Username</label>
-                        <input ref={this.username} type="text" id="username" placeholder="Username"/>
+                        <input type="text"
+                               id="username"
+                               placeholder="Username"
+                               value={this.state.username}
+                               onChange={this.setUsername}/>
                     </div>
                     <div>
                         <label htmlFor="password" className="title">Password</label>
-                        <input ref={this.password} type="password" id="password" placeholder="Password"/>
+                        <input type="password"
+                               id="password"
+                               placeholder="Password"
+                               value={this.state.password}
+                               onChange={this.setPassword}/>
                     </div>
                     <div>
                         <label htmlFor="backend_url" className="title">Server</label>
-                        <select ref={this.backendURL}
-                                id="backend_url">
-                            <option selected={true}
-                                    value="https://deasy.dans.knaw.nl/deposit-properties/graphql">
-                                easy-deposit-properties
-                            </option>
-                        </select>
+                        <input type="text"
+                               id="backend_url"
+                               placeholder="Backend URL"
+                               value={this.state.backendURL}
+                               onChange={this.setBackendURL}/>
                     </div>
                 </div>
                 <div className="graphiql-container">
@@ -123,8 +159,7 @@ class App extends Component<{}, AppState> {
                         onEdit={this.setQuery}
                         onRunOperation={() => this._graphiql.current.handleRunQuery()}
                         explorerIsOpen={this.state.explorerIsOpen}
-                        onToggleExplorer={this.toggleExplorer}
-                    />
+                        onToggleExplorer={this.toggleExplorer}/>
                     <GraphiQL
                         ref={ref => (this._graphiql = ref)}
                         fetcher={this.graphQLFetcher}
@@ -134,34 +169,28 @@ class App extends Component<{}, AppState> {
                         operationName={this.state.operationName}
                         onEditQuery={this.setQuery}
                         onEditVariables={this.setVariable}
-                        onEditOperationName={this.setNewOperationName}
-                    >
+                        onEditOperationName={this.setNewOperationName}>
                         <GraphiQL.Toolbar>
                             <GraphiQL.Button
                                 onClick={() => this._graphiql.current.handlePrettifyQuery()}
                                 label="Prettify"
-                                title="Prettify Query (Shift-Ctrl-P)"
-                            />
+                                title="Prettify Query (Shift-Ctrl-P)"/>
                             <GraphiQL.Button
                                 onClick={() => this._graphiql.current.handleMergeQuery()}
                                 title="Merge Query (Shift-Ctrl-M)"
-                                label="Merge"
-                            />
+                                label="Merge"/>
                             <GraphiQL.Button
                                 onClick={() => this._graphiql.current.handleCopyQuery()}
                                 title="Copy Query (Shift-Ctrl-C)"
-                                label="Copy"
-                            />
+                                label="Copy"/>
                             <GraphiQL.Button
                                 onClick={() => this._graphiql.current.handleToggleHistory()}
                                 label="History"
-                                title="Show History"
-                            />
+                                title="Show History"/>
                             <GraphiQL.Button
                                 onClick={this.toggleExplorer}
                                 label="Explorer"
-                                title="Toggle Explorer"
-                            />
+                                title="Toggle Explorer"/>
                         </GraphiQL.Toolbar>
                     </GraphiQL>
                 </div>
