@@ -30,6 +30,10 @@ body {
     padding: 7px 14px 6px;
 }
 
+.config > .config_elem {
+    margin-bottom: 0.25rem;
+}
+
 .config label {
     display: inline-block;
     width: 90px;
@@ -37,14 +41,60 @@ body {
 }
 
 .config input,
-.config select {
-    color: #141823;
-    padding-left: 3px;
+#backend_url.error ~ .error_text,
+#backend_url_button {
     font-size: 16px;
     font-family: system, -apple-system, 'San Francisco', '.SFNSDisplay-Regular', 'Segoe UI', Segoe, 'Segoe WP', 'Helvetica Neue', helvetica, 'Lucida Grande', arial, sans-serif;
+}
+
+.config input,
+#backend_url.error ~ .error_text {
+    color: #141823;
+    padding-left: 3px;
     width: 50%;
 }
 
 .graphiql-container {
     height: calc(100vh - 85px);
+}
+
+#backend_url.error {
+    border: 2px solid red;
+    margin-bottom: 0.25rem;
+}
+
+#backend_url.error ~ .error_text {
+    display: block;
+    color: red;
+    width: unset;
+    margin-left: 90px; /* 90px from `.config label` */
+}
+
+#backend_url_button {
+    margin: 0 0 0 0.25rem;
+
+    overflow: visible;
+    text-transform: none;
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    vertical-align: top;
+    user-select: none;
+    border: 1px solid black;
+    padding: 0 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 0.25rem;
+    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+
+    color: white;
+    background-color: black;
+}
+
+#backend_url_button.disabled, #backend_url_button:disabled {
+    opacity: .65;
+}
+
+[type=button]:not(:disabled) {
+    cursor: pointer;
 }

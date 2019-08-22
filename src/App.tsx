@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import * as React from "react"
-import { Component, createRef, SyntheticEvent } from "react"
+import { Component, createRef } from "react"
 import GraphiQL from "graphiql"
 import GraphiQLExplorer from "graphiql-explorer"
 import "graphiql/graphiql.css"
@@ -23,6 +23,7 @@ import { buildClientSchema, getIntrospectionQuery, GraphQLSchema } from "graphql
 
 interface AppState {
     schema?: GraphQLSchema
+    schemaError?: string
     query?: string
     variables?: string
     operationName?: string
@@ -38,11 +39,12 @@ class App extends Component<{}, AppState> {
         super(props)
         this.state = {
             schema: null,
+            schemaError: undefined,
             query: undefined,
             variables: undefined,
             operationName: undefined,
             explorerIsOpen: true,
-            backendURL: "https://deasy.dans.knaw.nl/deposit-properties/graphql",
+            backendURL: "",
             username: "",
             password: "",
         }
@@ -50,34 +52,50 @@ class App extends Component<{}, AppState> {
 
     _graphiql = createRef<GraphiQL>()
 
-    graphQLFetcher = async (graphQLParams) => {
+    private isBlank = str => (!str || /^\s*$/.test(str))
+
+    graphQLFetcher: (graphQLParams: { query: string }) => Promise<any> = async (graphQLParams) => {
         const username = this.state.username
         const password = this.state.password
         const encoded = window.btoa(`${username}:${password}`)
         const auth = "Basic " + encoded
 
-        const response = await fetch(this.state.backendURL, {
-            method: "post",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "Authorization": auth,
-            },
-            body: JSON.stringify(graphQLParams),
-            credentials: "include",
-        })
-        const responseBody = await response.text()
-
-        try {
-            return JSON.parse(responseBody)
-        }
-        catch (error) {
-            return responseBody
+        if (this.isBlank(this.state.backendURL))
+            return {}
+        else {
+            try {
+                const response = await fetch(this.state.backendURL, {
+                    method: "post",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        "Authorization": auth,
+                    },
+                    body: JSON.stringify(graphQLParams),
+                    credentials: "include",
+                })
+                const responseBody = await response.text()
+                return response.status === 200
+                    ? JSON.parse(responseBody)
+                    : { error: responseBody }
+            }
+            catch (error) {
+                console.error(error.toString())
+                return { error: error.toString() }
+            }
         }
     }
 
     toggleExplorer = () => {
         this.setState(state => ({ ...state, explorerIsOpen: !state.explorerIsOpen }))
+    }
+
+    setSchema = newSchema => {
+        this.setState(state => ({ ...state, schema: newSchema }))
+    }
+
+    setSchemaError = newSchemaError => {
+        this.setState(state => ({ ...state, schemaError: newSchemaError }))
     }
 
     setQuery = newQuery => {
@@ -109,25 +127,21 @@ class App extends Component<{}, AppState> {
 
     async fetchSchema() {
         const result = await this.graphQLFetcher({ query: getIntrospectionQuery() })
-        this.setState(state => ({ ...state, schema: buildClientSchema(result.data) }))
+        if (result.data)
+            this.setSchema(buildClientSchema(result.data))
+        else if (result.error)
+            this.setSchemaError(result.error)
     }
 
     async componentDidMount() {
         await this.fetchSchema()
     }
 
-    async componentDidUpdate(prevProps: Readonly<{}>, prevState: Readonly<AppState>, snapshot?: any) {
-        if (prevState.backendURL !== this.state.backendURL) {
-            console.log("backendURL changed, fetching new schema")
-            await this.fetchSchema()
-        }
-    }
-
     render() {
         return (
             <div id="graphiql">
                 <div className="config">
-                    <div>
+                    <div className="config_elem">
                         <label htmlFor="username" className="title">Username</label>
                         <input type="text"
                                id="username"
@@ -135,7 +149,7 @@ class App extends Component<{}, AppState> {
                                value={this.state.username}
                                onChange={this.setUsername}/>
                     </div>
-                    <div>
+                    <div className="config_elem">
                         <label htmlFor="password" className="title">Password</label>
                         <input type="password"
                                id="password"
@@ -143,13 +157,21 @@ class App extends Component<{}, AppState> {
                                value={this.state.password}
                                onChange={this.setPassword}/>
                     </div>
-                    <div>
+                    <div className="config_elem">
                         <label htmlFor="backend_url" className="title">Server</label>
                         <input type="text"
                                id="backend_url"
+                               className={this.state.schemaError ? "error" : ""}
                                placeholder="Backend URL"
                                value={this.state.backendURL}
-                               onChange={this.setBackendURL}/>
+                               onChange={this.setBackendURL}
+                               onKeyPress={e => e.key === "Enter" && this.fetchSchema()}/>
+                        <button type="button"
+                                id="backend_url_button"
+                                disabled={this.isBlank(this.state.backendURL)}
+                                onClick={() => this.fetchSchema()}>Use
+                        </button>
+                        {this.state.schemaError && <span className="error_text">{this.state.schemaError}</span>}
                     </div>
                 </div>
                 <div className="graphiql-container">
