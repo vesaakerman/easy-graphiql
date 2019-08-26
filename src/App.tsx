@@ -147,7 +147,7 @@ class App extends Component<{}, AppState> {
 
     render() {
         return (
-            <div id="graphiql">
+            <>
                 <div className="config">
                     <div className="config_elem">
                         <label htmlFor="username" className="title">Username</label>
@@ -224,7 +224,7 @@ class App extends Component<{}, AppState> {
                         </GraphiQL.Toolbar>
                     </GraphiQL>
                 </div>
-            </div>
+            </>
         )
     }
 }
