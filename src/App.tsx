@@ -28,6 +28,7 @@ interface AppState {
     variables?: string
     operationName?: string
     explorerIsOpen: boolean
+    doProfile: boolean
 
     backendURL: string
     username: string
@@ -44,6 +45,7 @@ class App extends Component<{}, AppState> {
             variables: undefined,
             operationName: undefined,
             explorerIsOpen: true,
+            doProfile: false,
             backendURL: localStorage.getItem(App.LS_BACKEND_URL) || "",
             username: localStorage.getItem(App.LS_USERNAME) || "",
             password: "",
@@ -68,7 +70,7 @@ class App extends Component<{}, AppState> {
             return {}
         else {
             try {
-                const response = await fetch(this.state.backendURL, {
+                const response = await fetch(this.state.backendURL + (this.state.doProfile ? "?profile" : ""), {
                     method: "post",
                     headers: {
                         "Accept": "application/json",
@@ -80,18 +82,47 @@ class App extends Component<{}, AppState> {
                 })
                 const responseBody = await response.text()
                 return response.status === 200
-                    ? JSON.parse(responseBody)
+                    ? this.parseResponse(responseBody)
                     : { error: responseBody }
             }
             catch (error) {
                 console.error(error.toString())
                 return { error: error.toString() }
             }
+            finally {
+                this.setProfiling(false)
+            }
         }
+    }
+
+    parseResponse = (responseBody: string) => {
+        const json = JSON.parse(responseBody)
+
+        if (this.state.operationName !== "IntrospectionQuery" && this._graphiql.current && json.extensions) {
+            if (json.extensions.metrics) {
+                this._graphiql.current.getQueryEditor().setValue(json.extensions.metrics.query)
+                delete json.extensions.metrics.query
+            }
+            else if (json.extensions.formattedQuery) {
+                this._graphiql.current.getQueryEditor().setValue(json.extensions.formattedQuery)
+                delete json.extensions
+            }
+        }
+
+        return json
+    }
+
+    onProfile = () => {
+        this.setProfiling(true)
+        this._graphiql.current._runQueryAtCursor()
     }
 
     toggleExplorer = () => {
         this.setState(state => ({ ...state, explorerIsOpen: !state.explorerIsOpen }))
+    }
+
+    setProfiling = newValue => {
+        this.setState(state => ({ ...state, doProfile: newValue }))
     }
 
     setSchema = newSchema => {
@@ -222,6 +253,10 @@ class App extends Component<{}, AppState> {
                                 onClick={this.toggleExplorer}
                                 label="Explorer"
                                 title="Toggle Explorer"/>
+                            <GraphiQL.Button
+                                onClick={this.onProfile}
+                                label="Profile"
+                                title="Profile Query"/>
                         </GraphiQL.Toolbar>
                     </GraphiQL>
                 </div>
