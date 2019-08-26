@@ -44,11 +44,15 @@ class App extends Component<{}, AppState> {
             variables: undefined,
             operationName: undefined,
             explorerIsOpen: true,
-            backendURL: "",
-            username: "",
+            backendURL: localStorage.getItem(App.LS_BACKEND_URL) || "",
+            username: localStorage.getItem(App.LS_USERNAME) || "",
             password: "",
         }
     }
+
+    // localstorage keys
+    static LS_USERNAME = "easy-graphiql:username"
+    static LS_BACKEND_URL = "easy-graphiql:backend-url"
 
     _graphiql = createRef<GraphiQL>()
 
@@ -112,7 +116,9 @@ class App extends Component<{}, AppState> {
 
     setUsername = e => {
         e.persist()
-        this.setState(state => ({ ...state, username: e.target.value }))
+        const newUsername = e.target.value
+        this.setState(state => ({ ...state, username: newUsername }))
+        localStorage.setItem(App.LS_USERNAME, newUsername)
     }
 
     setPassword = e => {
@@ -122,7 +128,9 @@ class App extends Component<{}, AppState> {
 
     setBackendURL = e => {
         e.persist()
-        this.setState(state => ({ ...state, backendURL: e.target.value }))
+        const newBackendUrl = e.target.value
+        this.setState(state => ({ ...state, backendURL: newBackendUrl }))
+        localStorage.setItem(App.LS_BACKEND_URL, newBackendUrl)
     }
 
     async fetchSchema() {
