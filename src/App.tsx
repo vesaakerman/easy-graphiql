@@ -182,7 +182,8 @@ class App extends Component<{}, AppState> {
                         {this.state.schemaError && <span className="error_text">{this.state.schemaError}</span>}
                     </div>
                 </div>
-                <div className="graphiql-container">
+                <div className="graphiql-container"
+                     style={{ height: `calc(100vh - ${this.state.schemaError ? 120 : 100}px)` }}>
                     <GraphiQLExplorer
                         schema={this.state.schema}
                         query={this.state.query}
