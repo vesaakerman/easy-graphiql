@@ -55,7 +55,7 @@ body {
 }
 
 .graphiql-container {
-    height: calc(100vh - 85px);
+    height: calc(100vh - 100px); /* 100px is the height of the `config` div */
 }
 
 #backend_url.error {
