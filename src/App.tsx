@@ -208,12 +208,12 @@ class App extends Component<{}, AppState> {
                                 title="Prettify Query (Shift-Ctrl-P)"/>
                             <GraphiQL.Button
                                 onClick={() => this._graphiql.current.handleMergeQuery()}
-                                title="Merge Query (Shift-Ctrl-M)"
-                                label="Merge"/>
+                                label="Merge"
+                                title="Merge Query (Shift-Ctrl-M)"/>
                             <GraphiQL.Button
                                 onClick={() => this._graphiql.current.handleCopyQuery()}
-                                title="Copy Query (Shift-Ctrl-C)"
-                                label="Copy"/>
+                                label="Copy"
+                                title="Copy Query (Shift-Ctrl-C)"/>
                             <GraphiQL.Button
                                 onClick={() => this._graphiql.current.handleToggleHistory()}
                                 label="History"
