@@ -9,4 +9,4 @@ EASY GraphiQL UI
 Welcome
 -------
 
-Welcome to the `easy-graphiql` project. See the [GitHub pages](https://dans-knaw.github.io/easy-deposit-api/) for the manual.
+Welcome to the `easy-graphiql` project. See the [GitHub pages](https://dans-knaw.github.io/easy-graphiql/) for the manual.
